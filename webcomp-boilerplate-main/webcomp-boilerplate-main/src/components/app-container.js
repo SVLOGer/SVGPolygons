@@ -5,6 +5,9 @@ template.innerHTML = `
       display: block;
       width: 100%;
       height: 100%;
+      background-color: #1a1a1a;
+      padding: 20px;
+      box-sizing: border-box;
     }
   </style>
   <buffer-zone></buffer-zone>

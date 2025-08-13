@@ -9,7 +9,7 @@ template.innerHTML = `
       cursor: move;
       transform-origin: 0 0;
       will-change: transform;
-      transition: transform 0.2s ease-out;
+      transition: transform 0.1s;
       z-index: 1;
     }
     svg {
@@ -17,16 +17,14 @@ template.innerHTML = `
       overflow: visible;
     }
     polygon {
+      fill: #f00;
+      stroke: #fff;
+      stroke-width: 1px;
       transition: fill 0.2s;
       vector-effect: non-scaling-stroke;
     }
     :host(:hover) polygon {
-      filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
-    }
-    :host([dragging]) {
-      z-index: 1000;
-      transition: none;
-      opacity: 0.8;
+      filter: drop-shadow(0 0 3px rgba(255,0,0,0.5));
     }
   </style>
   <svg width="100" height="100">

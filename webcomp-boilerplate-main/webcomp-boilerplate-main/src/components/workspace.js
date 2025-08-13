@@ -3,23 +3,22 @@ template.innerHTML = `
   <style>
     :host {
       display: block;
-      border: 1px solid var(--border-color);
+      background-color: #222;
+      color: #eee;
       padding: 20px;
-      background-color: white;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .workspace-container {
       position: relative;
       width: 100%;
       height: 500px;
-      border: 1px solid #ccc;
+      background-color: #333;
+      background-image:
+        linear-gradient(#444 1px, transparent 1px),
+        linear-gradient(90deg, #444 1px, transparent 1px);
+      background-size: 20px 20px;
       overflow: hidden;
       touch-action: none;
-      cursor: grab;
-    }
-    .workspace-container.grabbing {
-      cursor: grabbing;
     }
     .workspace-content {
       position: absolute;
@@ -33,7 +32,7 @@ template.innerHTML = `
     }
     .x-axis, .y-axis {
       position: absolute;
-      background-color: rgba(0, 0, 0, 0.1);
+      background-color: rgba(0, 0, 0, 0.3);
       z-index: 10;
     }
     .x-axis {
@@ -41,19 +40,19 @@ template.innerHTML = `
       left: 20px;
       width: calc(100% - 20px);
       height: 20px;
-      border-top: 1px solid #333;
+      border-top: 1px solid #666;
     }
     .y-axis {
       top: 0;
       left: 0;
       width: 20px;
       height: 100%;
-      border-right: 1px solid #333;
+      border-right: 1px solid #666;
     }
     .scale-mark {
       position: absolute;
       font-size: 10px;
-      color: #333;
+      color: #aaa;
       font-family: Arial, sans-serif;
       user-select: none;
     }

@@ -5,11 +5,10 @@ template.innerHTML = `
   <style>
     :host {
       display: block;
-      border: 1px solid var(--border-color);
+      background-color: #222;
+      color: #eee;
       padding: 20px;
-      background-color: white;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
     .polygons-container {
@@ -18,13 +17,23 @@ template.innerHTML = `
       gap: 20px;
       min-height: 150px;
     }
-    polygon-element {
-      transition: transform 0.2s;
-    }
     #create-btn, #save-btn, #reset-btn {
       margin-right: 10px;
-      padding: 5px 10px;
+      padding: 8px 16px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
+    }
+    #create-btn:hover, #save-btn:hover {
+      background-color: #666;
+    }
+    #reset-btn {
+      background-color: #822;
+    }
+    #reset-btn:hover {
+      background-color: #a33;
     }
   </style>
   <div class="zone-title">Buffer Zone</div>
