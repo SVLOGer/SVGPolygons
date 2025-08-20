@@ -1,5 +1,3 @@
-import { generateRandomColor } from '../utils/helpers.js';
-
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -26,6 +24,10 @@ template.innerHTML = `
     :host(:hover) polygon {
       filter: drop-shadow(0 0 3px rgba(255,0,0,0.5));
     }
+    :host([dragging]) {
+      transition: none;
+      z-index: 1000;
+    }
   </style>
   <svg width="100" height="100">
     <polygon></polygon>
@@ -44,6 +46,8 @@ class PolygonElement extends HTMLElement {
     this._dragging = false;
     this._startX = 0;
     this._startY = 0;
+    this._currentX = 0;
+    this._currentY = 0;
 
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -73,6 +77,10 @@ class PolygonElement extends HTMLElement {
       this.setAttribute('fill', generateRandomColor());
     }
     this.addEventListener('mousedown', this.handleMouseDown);
+
+    this._currentX = parseFloat(this.getAttribute('data-x')) || 0;
+    this._currentY = parseFloat(this.getAttribute('data-y')) || 0;
+
     this.updatePosition();
   }
 
@@ -89,6 +97,16 @@ class PolygonElement extends HTMLElement {
     this._dragging = true;
     this._startX = e.clientX;
     this._startY = e.clientY;
+
+    const workspace = this.findWorkspace();
+    if (workspace) {
+      this._currentX = parseFloat(this.getAttribute('data-x')) || 0;
+      this._currentY = parseFloat(this.getAttribute('data-y')) || 0;
+    } else {
+      this._currentX = 0;
+      this._currentY = 0;
+    }
+
     this.setAttribute('dragging', '');
     document.addEventListener('mousemove', this.handleMouseMove);
     document.addEventListener('mouseup', this.handleMouseUp, { once: true });
@@ -97,18 +115,37 @@ class PolygonElement extends HTMLElement {
   handleMouseMove(e) {
     if (!this._dragging) return;
 
-    const scale = parseFloat(this.getAttribute('data-scale')) || 1
+    const workspace = this.findWorkspace();
+    const workspaceScale = workspace ? workspace.scale : 1;
 
-    const dx = (e.clientX - this._startX) / scale;
-    const dy = (e.clientY - this._startY) / scale;
+    const dx = (e.clientX - this._startX) / workspaceScale;
+    const dy = (e.clientY - this._startY) / workspaceScale;
 
-    this.style.transform = `translate(${dx}px, ${dy}px)`;
+    const newX = this._currentX + dx;
+    const newY = this._currentY + dy;
+
+    const polygonScale = parseFloat(this.getAttribute('data-scale')) || 1;
+
+    this.style.transform = `translate(${newX * polygonScale}px, ${newY * polygonScale}px)`;
   }
 
   handleMouseUp(e) {
     if (!this._dragging) return;
     this._dragging = false;
     this.removeAttribute('dragging');
+
+    const workspace = this.findWorkspace();
+    const workspaceScale = workspace ? workspace.scale : 1;
+
+    const dx = (e.clientX - this._startX) / workspaceScale;
+    const dy = (e.clientY - this._startY) / workspaceScale;
+
+    const finalX = this._currentX + dx;
+    const finalY = this._currentY + dy;
+
+    this.setAttribute('data-x', finalX);
+    this.setAttribute('data-y', finalY);
+    this.updatePosition();
 
     const event = new CustomEvent('polygon-dropped', {
       bubbles: true,
@@ -122,6 +159,17 @@ class PolygonElement extends HTMLElement {
     this.dispatchEvent(event);
 
     document.removeEventListener('mousemove', this.handleMouseMove);
+  }
+
+  findWorkspace() {
+    let element = this;
+    while (element && element !== document.body) {
+      if (element.nodeName === 'WORKSPACE-ZONE') {
+        return element;
+      }
+      element = element.parentNode || element.host;
+    }
+    return null;
   }
 }
 

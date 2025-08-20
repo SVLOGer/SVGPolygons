@@ -29,6 +29,7 @@ class AppContainer extends HTMLElement {
 
       if (bufferZone && workspaceZone) {
         bufferZone.setWorkspace(workspaceZone);
+        bufferZone.loadAllPolygons();
       }
     });
   }

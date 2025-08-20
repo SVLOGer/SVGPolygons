@@ -128,13 +128,44 @@ class Workspace extends HTMLElement {
     );
   }
 
-  addPolygonFromBuffer(polygon) {
-    polygon.setAttribute('data-x', 0);
-    polygon.setAttribute('data-y', 0);
+  addPolygonFromBuffer(polygon, clientX, clientY) {
+    const rect = this.container.getBoundingClientRect();
+
+    const polygonElement = polygon.shadowRoot.querySelector('polygon');
+    const points = polygonElement.getAttribute('points').split(' ').map(coord => coord.split(',').map(Number));
+
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+    points.forEach(([x, y]) => {
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    });
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    const x = (clientX - rect.left - this.offset.x) / this.scale - centerX;
+    const y = (clientY - rect.top - this.offset.y) / this.scale - centerY;
+
+    polygon.setAttribute('data-x', x);
+    polygon.setAttribute('data-y', y);
     polygon.setAttribute('data-scale', this.scale);
+
     this.polygonsContainer.appendChild(polygon);
     this.updatePolygonPosition(polygon);
     return true;
+  }
+
+  addPolygon(polygonData) {
+    const polygon = document.createElement('polygon-element');
+    polygon.setAttribute('points', polygonData.points);
+    polygon.setAttribute('fill', polygonData.fill);
+    polygon.setAttribute('stroke', polygonData.stroke || '#000');
+    polygon.setAttribute('stroke-width', polygonData.strokeWidth || '1');
+    this.polygonsContainer.appendChild(polygon);
+    return polygon;
   }
 
   updatePolygonPosition(polygon) {
@@ -165,15 +196,13 @@ class Workspace extends HTMLElement {
       }
     }
 
-    const rect = this.container.getBoundingClientRect();
-    const x = (clientX - rect.left - this.offset.x) / this.scale;
-    const y = (clientY - rect.top - this.offset.y) / this.scale;
-
-    polygon.setAttribute('data-x', x);
-    polygon.setAttribute('data-y', y);
-    polygon.style.left = '0';
-    polygon.style.top = '0';
     this.updatePolygonPosition(polygon);
+  }
+
+  clearContainer() {
+    while (this.polygonsContainer.firstChild) {
+      this.polygonsContainer.removeChild(this.polygonsContainer.firstChild);
+    }
   }
 
   updateContainerSize() {

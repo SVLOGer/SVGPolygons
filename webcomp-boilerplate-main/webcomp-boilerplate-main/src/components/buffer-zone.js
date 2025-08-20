@@ -1,4 +1,4 @@
-import { generateRandomPolygon } from '../utils/helpers.js';
+import {generateRandomPolygon} from "../utils/helpers";
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -39,8 +39,8 @@ template.innerHTML = `
   <div class="zone-title">Buffer Zone</div>
   <div class="controls">
     <button id="create-btn">Create Polygons</button>
-    <button id="save-btn">Save</button>
-    <button id="reset-btn">Reset</button>
+    <button id="save-btn">Save All</button>
+    <button id="reset-btn">Reset All</button>
   </div>
   <div class="polygons-container"></div>
 `;
@@ -56,10 +56,10 @@ class BufferZone extends HTMLElement {
 
   connectedCallback() {
     this.shadowRoot.getElementById('create-btn').addEventListener('click', () => this.createPolygons());
-    this.shadowRoot.getElementById('save-btn').addEventListener('click', () => this.savePolygons());
-    this.shadowRoot.getElementById('reset-btn').addEventListener('click', () => this.resetPolygons());
+    this.shadowRoot.getElementById('save-btn').addEventListener('click', () => this.saveAllPolygons());
+    this.shadowRoot.getElementById('reset-btn').addEventListener('click', () => this.resetAllPolygons());
     this.addEventListener('polygon-dropped', this.handlePolygonDrop);
-    this.loadPolygons();
+    this.loadAllPolygons();
   }
 
   setWorkspace(workspace) {
@@ -79,6 +79,12 @@ class BufferZone extends HTMLElement {
     const isInside = this.workspace.checkIfInside(clientX, clientY);
     if (isInside) {
       const newPolygon = polygon.cloneNode(true);
+
+      newPolygon.setAttribute('data-x', '0');
+      newPolygon.setAttribute('data-y', '0');
+      newPolygon.removeAttribute('dragging');
+      newPolygon.style.transform = '';
+
       this.workspace.addPolygonFromBuffer(newPolygon, clientX, clientY);
 
       if (polygon.parentNode === this.container) {
@@ -118,33 +124,83 @@ class BufferZone extends HTMLElement {
     return polygon;
   }
 
-  savePolygons() {
-    const polygonsData = Array.from(this.container.children).map(polygon => ({
+  saveAllPolygons() {
+    const bufferPolygons = Array.from(this.container.children).map(polygon => ({
       points: polygon.getAttribute('points'),
       fill: polygon.getAttribute('fill'),
       stroke: polygon.getAttribute('stroke'),
-      strokeWidth: polygon.getAttribute('stroke-width')
+      strokeWidth: polygon.getAttribute('stroke-width'),
+      type: 'buffer'
     }));
-    localStorage.setItem('bufferZonePolygons', JSON.stringify(polygonsData));
+
+    let workspacePolygons = [];
+    if (this.workspace) {
+      workspacePolygons = Array.from(this.workspace.polygonsContainer.children).map(polygon => ({
+        points: polygon.getAttribute('points'),
+        fill: polygon.getAttribute('fill'),
+        stroke: polygon.getAttribute('stroke'),
+        strokeWidth: polygon.getAttribute('stroke-width'),
+        dataX: polygon.getAttribute('data-x'),
+        dataY: polygon.getAttribute('data-y'),
+        dataScale: polygon.getAttribute('data-scale'),
+        type: 'workspace'
+      }));
+    }
+
+    const allPolygons = {
+      buffer: bufferPolygons,
+      workspace: workspacePolygons,
+      workspaceState: this.workspace ? {
+        scale: this.workspace.scale,
+        offset: this.workspace.offset
+      } : null
+    };
+
+    localStorage.setItem('allPolygons', JSON.stringify(allPolygons));
+    alert('All polygons saved successfully!');
   }
 
-  loadPolygons() {
-    const savedData = localStorage.getItem('bufferZonePolygons');
+  loadAllPolygons() {
+    const savedData = localStorage.getItem('allPolygons');
     if (savedData) {
       try {
-        const polygonsData = JSON.parse(savedData);
+        const allData = JSON.parse(savedData);
+
         this.clearContainer();
-        polygonsData.forEach(data => this.addPolygon(data));
+        allData.buffer.forEach(data => this.addPolygon(data));
+
+        if (this.workspace && allData.workspace) {
+          this.workspace.clearContainer();
+          allData.workspace.forEach(data => {
+            const polygon = this.workspace.addPolygon(data);
+            if (polygon && data.dataX && data.dataY && data.dataScale) {
+              polygon.setAttribute('data-x', data.dataX);
+              polygon.setAttribute('data-y', data.dataY);
+              polygon.setAttribute('data-scale', data.dataScale);
+              this.workspace.updatePolygonPosition(polygon);
+            }
+          });
+        }
+
+        if (this.workspace && allData.workspaceState) {
+          this.workspace.scale = allData.workspaceState.scale;
+          this.workspace.offset = allData.workspaceState.offset;
+          this.workspace.updateTransform();
+          this.workspace.updateScaleMarks();
+        }
       } catch (e) {
         console.error('Failed to load polygons:', e);
       }
     }
   }
 
-  resetPolygons() {
-    if (confirm('Are you sure you want to reset all polygons?')) {
-      localStorage.removeItem('bufferZonePolygons');
+  resetAllPolygons() {
+    if (confirm('Are you sure you want to reset ALL polygons in both buffer and workspace?')) {
+      localStorage.removeItem('allPolygons');
       this.clearContainer();
+      if (this.workspace) {
+        this.workspace.clearContainer();
+      }
     }
   }
 
